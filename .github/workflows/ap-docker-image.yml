@@ -1,0 +1,37 @@
+name: Build and Push ap docker Image
+
+on:
+  workflow_dispatch:
+
+# Required to allow the Action to upload the image to GHCR
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Log in to GitHub Container Registry
+        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+
+      - name: Build and Push Image
+        run: |
+          # Define the image name and force it to lowercase
+          RAW_IMAGE_NAME="ghcr.io/${{ github.repository_owner }}/ap-docker-image:latest"
+          IMAGE_NAME=$(echo "$RAW_IMAGE_NAME" | tr '[:upper:]' '[:lower:]')
+          
+          echo "Building image: $IMAGE_NAME"
+          
+          docker build -t $IMAGE_NAME .
+          docker push $IMAGE_NAME
+
+      - name: Test Run Image
+        run: |
+          # Verify the image works on the runner before you try it on HPC
+          IMAGE_NAME=$(echo "ghcr.io/${{ github.repository_owner }}/ap-docker-image:latest" | tr '[:upper:]' '[:lower:]')
+          docker run --rm $IMAGE_NAME
