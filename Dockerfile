@@ -8,12 +8,17 @@ FROM julia:1.11.0 AS builder
 
 WORKDIR /app
 
+# Set a global depot path
+ENV JULIA_DEPOT_PATH=/opt/julia_depot
+RUN mkdir -p $JULIA_DEPOT_PATH
+
 # Copy Julia files and instantiate the environment
 COPY Project.toml Manifest.toml ./
 RUN julia --project=. -e 'using Pkg; Pkg.instantiate(); Pkg.precompile()'
 
 # --- Stage 2: Final Image --- Use Miniconda as the base
 FROM continuumio/miniconda3
+
 
 # Set the working directory
 WORKDIR /app
@@ -33,10 +38,11 @@ RUN ldconfig
 
 # Copy Julia binaries and precompiled packages from builder
 COPY --from=builder /usr/local/julia /usr/local/julia
-COPY --from=builder /root/.julia /root/.julia
+COPY --from=builder /opt/julia_depot /opt/julia_depot
 
 # Create a symlink so 'julia' is globally accessible
 RUN ln -s /usr/local/julia/bin/julia /usr/local/bin/julia
+
 
 # Fix the Execstack issue using the borrowed binary
 RUN /usr/bin/execstack -c /usr/local/julia/lib/julia/libopenlibm.so
@@ -54,6 +60,9 @@ RUN conda env update -f environment.yml && \
 # Set the PATH so the container sees the environment's tools first
 ENV PATH="/opt/conda/envs/ap-env/bin:${PATH}"
 ENV JULIA_PROJECT="/app"
+ENV JULIA_DEPOT_PATH=/opt/julia_depot:
+
+
 
 # This tells the container to always use the fenicsx-env
 ENTRYPOINT ["conda", "run", "--no-capture-output", "-n", "ap-env"]
