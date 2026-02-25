@@ -58,9 +58,9 @@ RUN conda env update -f environment.yml && \
 #    ln -s /opt/conda/envs/ap-env/bin/x86_64-conda-linux-gnu-g++ /opt/conda/envs/ap-env/bin/g++
 
 # Set the PATH so the container sees the environment's tools first
+ENV JULIA_DEPOT_PATH="~/.julia:/opt/julia_depot"
 ENV PATH="/opt/conda/envs/ap-env/bin:${PATH}"
 ENV JULIA_PROJECT="/app"
-ENV JULIA_DEPOT_PATH=/opt/julia_depot:
 
 
 
