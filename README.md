@@ -14,14 +14,12 @@ The build process is divided into four stages to manage tools and dependencies w
 
 ```mermaid
 graph TD
-    S0[<b>Stage 0: Tools</b><br/>Extracts patching tools]
+    S0[<b>Stage 0: Tools</b><br/>Extracts execstack]
     S1[<b>Stage 1: Julia</b><br/>Provides Julia binaries]
-    S2[<b>Stage 2: Builder</b><br/>Patches Julia, creates Conda env,<br/>and precompiles packages]
-    S3[<b>Stage 3: Runtime</b><br/>The final, lean image]
+    S2[<b>Stage 2: Builder</b><br/>Patches and precompiles Julia,<br/> creates Conda env]
+    S3[<b>Stage 3: The final image </b><br/>Debian 13.3]
 
     S0 --> S2
     S1 --> S2
     S2 --> S3
 ```
-
-
