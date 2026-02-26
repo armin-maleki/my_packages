@@ -1,11 +1,12 @@
 # Julia-Conda Hybrid Environment
 This repository attempts to provide an efficient, multi-stage Docker environment for Julia 1.11.0 integrated with Miniconda3.
+
+
 <p align="left">
-  <img src="https://raw.githubusercontent.com/JuliaLang/julia-logo-graphics/master/images/julia-logo-color.svg" width="100" alt="Julia Logo" />
-  &nbsp;&nbsp;&nbsp;&nbsp;
-
+  <img src="./assets/julia_logo.svg" alt="Julia Logo" height="100">
+  &nbsp;&nbsp;
+  <img src="./assets/conda_logo.svg" alt="Conda Logo" height="100">
 </p>
-
 
 ## Build Architecture
 
