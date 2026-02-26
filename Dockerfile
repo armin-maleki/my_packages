@@ -30,25 +30,20 @@ RUN ldconfig && execstack -c /usr/local/julia/lib/julia/libopenlibm.so
 COPY environment.yml .
 RUN conda env update -f environment.yml && conda clean -afy
 
-# 6. CRITICAL: Configure Julia BEFORE Pkg.instantiate()
-# This tells Conda.jl to use the system environment instead of creating its own
+# 6. CRITICAL: Configure Julia to use system Conda BEFORE Pkg.instantiate()
+# These environment variables tell Conda.jl where the real conda is
 ENV PYTHON="/opt/conda/envs/ap-env/bin/python"
 ENV CONDA_JL_CONDA_EXE="/opt/conda/bin/conda"
 ENV CONDA_JL_USE_MAMBA="no"
 ENV JULIA_DEPOT_PATH=/opt/julia_depot
 ENV JULIA_PROJECT=/app
 
-# 7. Initialize Conda.jl to point to system Conda
-# This preemptively sets Conda.jl's metadata so it doesn't try to download its own
-RUN mkdir -p $JULIA_DEPOT_PATH && \
-    julia -e "using Conda; println(Conda.PYTHONDIR)" && \
-    julia -e "ENV[\"CONDA_JL_CONDA_EXE\"]=\"/opt/conda/bin/conda\"; using Conda; println(Conda.PYTHONDIR)"
-
-# 8. Install & Precompile Julia Packages
+# 7. Install & Precompile Julia Packages
+RUN mkdir -p $JULIA_DEPOT_PATH
 COPY Project.toml Manifest.toml ./
 RUN julia --project=. -e 'using Pkg; Pkg.instantiate(); Pkg.precompile()'
 
-# 9. Clean up (but keep julia_depot/conda this time - it's harmless now)
+# 8. Clean up
 RUN rm -rf /opt/julia_depot/registries \
     && rm -rf /opt/julia_depot/logs \
     && rm -rf /usr/local/julia/share/doc \
