@@ -3,9 +3,9 @@ This repository attempts to provide an efficient, multi-stage Docker environment
 
 
 <p align="left">
-  <img src="./assets/julia_logo.svg" alt="Julia Logo" height="100">
+  <img src="./assets/julia_logo.svg" alt="Julia Logo" height="50">
   &nbsp;&nbsp;
-  <img src="./assets/conda_logo.svg" alt="Conda Logo" height="100">
+  <img src="./assets/conda_logo.svg" alt="Conda Logo" height="50">
 </p>
 
 ## Build Architecture
