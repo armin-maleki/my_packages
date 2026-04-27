@@ -4,6 +4,7 @@ FROM ubuntu:22.04
 ENV DEBIAN_FRONTEND=noninteractive
 
 # Install required build tools and dependencies
+# We keep python3-numpy here as a system dependency for the build headers
 RUN apt-get update && apt-get install -y \
     build-essential \
     cmake \
@@ -21,7 +22,10 @@ RUN apt-get update && apt-get install -y \
     libhdf5-openmpi-dev \
     && rm -rf /var/lib/apt/lists/*
 
-# Install optional but recommended Python packages
+# CRITICAL FIX: Pin NumPy to the 1.x series BEFORE building ESPResSo
+# This ensures that when ESPResSo compiles its Cython/C++ extensions,
+# it uses the binary interface compatible with NumPy 1.x.
+RUN pip3 install --upgrade "numpy<2"
 RUN pip3 install scipy h5py matplotlib
 
 # Clone ESPResSo version 4.2.2
@@ -32,16 +36,15 @@ RUN git clone --branch 4.2.2 https://github.com/espressomd/espresso.git
 WORKDIR /opt/espresso/build
 RUN cmake .. \
     -DWITH_PYTHON=ON \
+    -DPYTHON_EXECUTABLE=$(which python3) \
     -DCMAKE_INSTALL_PREFIX=/usr/local \
     && make -j$(nproc) \
     && make install
 
-# Set the Python path so ESPResSo can be imported globally
-# Note: Ubuntu 22.04 uses python3.10
+# Path Fix: On Ubuntu 22.04, the 'make install' usually places the 
+# module in /usr/local/lib/python3.10/dist-packages.
 ENV PYTHONPATH="/usr/local/lib/python3.10/dist-packages:${PYTHONPATH}"
 
-# Set default working directory
 WORKDIR /workspace
 
-# Default command
 CMD ["/bin/bash"]
