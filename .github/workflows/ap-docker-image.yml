@@ -34,4 +34,4 @@ jobs:
         run: |
           # Verify the image works on the runner before you try it on HPC
           IMAGE_NAME=$(echo "ghcr.io/${{ github.repository_owner }}/ap-docker-image:latest" | tr '[:upper:]' '[:lower:]')
-          docker run --rm $IMAGE_NAME
+          docker run --rm $IMAGE_NAME python --version
