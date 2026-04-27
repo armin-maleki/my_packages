@@ -1,10 +1,10 @@
 FROM ubuntu:22.04
 
-# Prevent interactive prompts during package installation
+# Prevent interactive prompts
 ENV DEBIAN_FRONTEND=noninteractive
 
-# Install required build tools and dependencies
-# We keep python3-numpy here as a system dependency for the build headers
+# Install system dependencies
+# Added: libhdf5-dev for checkpointing/H5MD, and openblas for math performance
 RUN apt-get update && apt-get install -y \
     build-essential \
     cmake \
@@ -19,32 +19,32 @@ RUN apt-get update && apt-get install -y \
     openmpi-bin \
     libopenmpi-dev \
     libfftw3-dev \
+    libhdf5-dev \
     libhdf5-openmpi-dev \
     && rm -rf /var/lib/apt/lists/*
 
-# CRITICAL FIX: Pin NumPy to the 1.x series BEFORE building ESPResSo
-# This ensures that when ESPResSo compiles its Cython/C++ extensions,
-# it uses the binary interface compatible with NumPy 1.x.
-RUN pip3 install --upgrade "numpy<2"
-RUN pip3 install scipy h5py matplotlib
+# Install Python modules
+# We pin numpy<2 for binary compatibility with ESPResSo 4.2.2
+# Added: tqdm, pandas, and h5py (required for checkpointing/observables)
+RUN pip3 install --upgrade "numpy<2" && \
+    pip3 install scipy h5py matplotlib tqdm pandas
 
-# Clone ESPResSo version 4.2.2
+# Clone ESPResSo 4.2.2
 WORKDIR /opt
 RUN git clone --branch 4.2.2 https://github.com/espressomd/espresso.git
 
-# Configure and build ESPResSo
+# Build ESPResSo
 WORKDIR /opt/espresso/build
 RUN cmake .. \
     -DWITH_PYTHON=ON \
+    -DWITH_HDF5=ON \
     -DPYTHON_EXECUTABLE=$(which python3) \
     -DCMAKE_INSTALL_PREFIX=/usr/local \
     && make -j$(nproc) \
     && make install
 
-# Path Fix: On Ubuntu 22.04, the 'make install' usually places the 
-# module in /usr/local/lib/python3.10/dist-packages.
+# Path configuration for Python 3.10
 ENV PYTHONPATH="/usr/local/lib/python3.10/dist-packages:${PYTHONPATH}"
 
 WORKDIR /workspace
-
 CMD ["/bin/bash"]
