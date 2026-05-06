@@ -1,15 +1,14 @@
-FROM ubuntu:22.04
+# Use CUDA 12.1 on Ubuntu 22.04 (Matches standard HPC environments)
+FROM nvidia/cuda:12.1.1-devel-ubuntu22.04
 
 # Prevent interactive prompts
 ENV DEBIAN_FRONTEND=noninteractive
 
 # Install system dependencies
-# Added: libhdf5-dev for checkpointing/H5MD, and openblas for math performance
 RUN apt-get update && apt-get install -y \
     build-essential \
     cmake \
     git \
-    wget \
     python3 \
     python3-dev \
     python3-pip \
@@ -23,9 +22,7 @@ RUN apt-get update && apt-get install -y \
     libhdf5-openmpi-dev \
     && rm -rf /var/lib/apt/lists/*
 
-# Install Python modules
-# We pin numpy<2 for binary compatibility with ESPResSo 4.2.2
-# Added: tqdm, pandas, and h5py (required for checkpointing/observables)
+# Install Python modules (keeping NumPy < 2 for binary stability)
 RUN pip3 install --upgrade "numpy<2" && \
     pip3 install scipy h5py matplotlib tqdm pandas
 
@@ -33,18 +30,21 @@ RUN pip3 install --upgrade "numpy<2" && \
 WORKDIR /opt
 RUN git clone --branch 4.2.2 https://github.com/espressomd/espresso.git
 
-# Build ESPResSo
+# Build ESPResSo with GPU Support
 WORKDIR /opt/espresso/build
 RUN cmake .. \
     -DWITH_PYTHON=ON \
+    -DWITH_CUDA=ON \
     -DWITH_HDF5=ON \
-    -DPYTHON_EXECUTABLE=$(which python3) \
     -DCMAKE_INSTALL_PREFIX=/usr/local \
     && make -j$(nproc) \
     && make install
 
 # Path configuration for Python 3.10
 ENV PYTHONPATH="/usr/local/lib/python3.10/dist-packages:${PYTHONPATH}"
+
+# Ensure NVIDIA libraries are visible
+ENV LD_LIBRARY_PATH="/usr/local/cuda/lib64:${LD_LIBRARY_PATH}"
 
 WORKDIR /workspace
 CMD ["/bin/bash"]
