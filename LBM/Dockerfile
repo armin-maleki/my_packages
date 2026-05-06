@@ -1,36 +1,20 @@
-# Use CUDA 12.1 on Ubuntu 22.04 (Matches standard HPC environments)
-FROM nvidia/cuda:12.1.1-devel-ubuntu22.04
+# STAGE 1: The Builder
+FROM nvidia/cuda:12.1.1-devel-ubuntu22.04 AS builder
 
-# Prevent interactive prompts
 ENV DEBIAN_FRONTEND=noninteractive
 
-# Install system dependencies
+# Install only what is needed for compilation
 RUN apt-get update && apt-get install -y \
-    build-essential \
-    cmake \
-    git \
-    python3 \
-    python3-dev \
-    python3-pip \
-    python3-numpy \
-    cython3 \
-    libboost-all-dev \
-    openmpi-bin \
-    libopenmpi-dev \
-    libfftw3-dev \
-    libhdf5-dev \
-    libhdf5-openmpi-dev \
+    build-essential cmake git python3 python3-dev python3-pip \
+    libboost-all-dev libfftw3-dev libhdf5-dev libopenmpi-dev \
     && rm -rf /var/lib/apt/lists/*
 
-# Install Python modules (keeping NumPy < 2 for binary stability)
-RUN pip3 install --upgrade "numpy<2" && \
-    pip3 install scipy h5py matplotlib tqdm pandas
+# Pin NumPy for binary compatibility
+RUN pip3 install --upgrade "numpy<2" cython
 
-# Clone ESPResSo 4.2.2
+# Build ESPResSo
 WORKDIR /opt
-RUN git clone --branch 4.2.2 https://github.com/espressomd/espresso.git
-
-# Build ESPResSo with GPU Support
+RUN git clone --depth 1 --branch 4.2.2 https://github.com/espressomd/espresso.git
 WORKDIR /opt/espresso/build
 RUN cmake .. \
     -DWITH_PYTHON=ON \
@@ -40,10 +24,27 @@ RUN cmake .. \
     && make -j$(nproc) \
     && make install
 
-# Path configuration for Python 3.10
-ENV PYTHONPATH="/usr/local/lib/python3.10/dist-packages:${PYTHONPATH}"
+# STAGE 2: The Final Runtime (Optimized)
+FROM nvidia/cuda:12.1.1-runtime-ubuntu22.04
 
-# Ensure NVIDIA libraries are visible
+ENV DEBIAN_FRONTEND=noninteractive
+
+# Install only runtime libraries (no compilers)
+RUN apt-get update && apt-get install -y \
+    python3 python3-pip openmpi-bin \
+    libfftw3-3 libhdf5-103 libboost-serialization1.74.0 \
+    libboost-mpi1.74.0 libboost-filesystem1.74.0 \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy the compiled ESPResSo from the builder stage
+COPY --from=builder /usr/local /usr/local
+
+# Install final Python dependencies
+RUN pip3 install --upgrade "numpy<2" && \
+    pip3 install scipy h5py matplotlib tqdm pandas
+
+# Set environment paths
+ENV PYTHONPATH="/usr/local/lib/python3.10/dist-packages:${PYTHONPATH}"
 ENV LD_LIBRARY_PATH="/usr/local/cuda/lib64:${LD_LIBRARY_PATH}"
 
 WORKDIR /workspace
