@@ -4,7 +4,7 @@ FROM ubuntu:22.04
 ENV DEBIAN_FRONTEND=noninteractive
 
 # Install system dependencies
-# Added: libhdf5-dev for checkpointing/H5MD, and openblas for math performance
+# Added: nvidia-cuda-toolkit to enable GPU support during compilation
 RUN apt-get update && apt-get install -y \
     build-essential \
     cmake \
@@ -21,11 +21,10 @@ RUN apt-get update && apt-get install -y \
     libfftw3-dev \
     libhdf5-dev \
     libhdf5-openmpi-dev \
+    nvidia-cuda-toolkit \
     && rm -rf /var/lib/apt/lists/*
 
 # Install Python modules
-# We pin numpy<2 for binary compatibility with ESPResSo 4.2.2
-# Added: tqdm, pandas, and h5py (required for checkpointing/observables)
 RUN pip3 install --upgrade "numpy<2" && \
     pip3 install scipy h5py matplotlib tqdm pandas
 
@@ -34,10 +33,13 @@ WORKDIR /opt
 RUN git clone --branch 4.2.2 https://github.com/espressomd/espresso.git
 
 # Build ESPResSo
+# Added: -DWITH_CUDA=ON and explicit CUDA pathing
 WORKDIR /opt/espresso/build
 RUN cmake .. \
     -DWITH_PYTHON=ON \
+    -DWITH_CUDA=ON \
     -DWITH_HDF5=ON \
+    -DCUDA_TOOLKIT_ROOT_DIR=/usr/lib/nvidia-cuda-toolkit \
     -DPYTHON_EXECUTABLE=$(which python3) \
     -DCMAKE_INSTALL_PREFIX=/usr/local \
     && make -j$(nproc) \
