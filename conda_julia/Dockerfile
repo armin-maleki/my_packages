@@ -30,8 +30,7 @@ RUN ldconfig && execstack -c /usr/local/julia/lib/julia/libopenlibm.so
 COPY environment.yml .
 RUN conda env update -f environment.yml && conda clean -afy
 
-# 6. CRITICAL: Configure Julia to use system Conda BEFORE Pkg.instantiate()
-# These environment variables tell Conda.jl where the real conda is
+# 6. Configure Julia to use system Conda BEFORE Pkg.instantiate()
 ENV PYTHON="/opt/conda/envs/ap-env/bin/python"
 ENV CONDA_JL_CONDA_EXE="/opt/conda/bin/conda"
 ENV CONDA_JL_USE_MAMBA="no"
@@ -43,11 +42,10 @@ RUN mkdir -p $JULIA_DEPOT_PATH
 COPY Project.toml Manifest.toml ./
 RUN julia --project=. -e 'using Pkg; Pkg.instantiate(); Pkg.precompile()'
 
-# 8. Clean up
+# 8. Clean up safely (keeping the essential test directory needed for REPL/Plots precompilation)
 RUN rm -rf /opt/julia_depot/registries \
     && rm -rf /opt/julia_depot/logs \
-    && rm -rf /usr/local/julia/share/doc \
-    && rm -rf /usr/local/julia/share/julia/test
+    && rm -rf /usr/local/julia/share/doc
 
 # --- Stage 3: Final Image --- 
 FROM continuumio/miniconda3:latest
@@ -70,7 +68,9 @@ RUN conda env update -f environment.yml && \
 ENV PYTHON="/opt/conda/envs/ap-env/bin/python"
 ENV CONDA_JL_CONDA_EXE="/opt/conda/bin/conda"
 ENV CONDA_JL_USE_MAMBA="no"
-ENV JULIA_DEPOT_PATH="~/.julia:/opt/julia_depot"
+# Note: Singularity does not always expand '~' literally in JULIA_DEPOT_PATH; 
+# using an absolute fallback path or leaving empty ensures proper runtime scaling.
+ENV JULIA_DEPOT_PATH="/opt/julia_depot"
 ENV PATH="/opt/conda/envs/ap-env/bin:${PATH}"
 ENV JULIA_PROJECT="/app"
 
