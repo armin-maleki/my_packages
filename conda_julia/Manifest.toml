@@ -2,7 +2,7 @@
 
 julia_version = "1.11.0"
 manifest_format = "2.0"
-project_hash = "d6d6449aacf74db0850b8fd2fc2de3fb62cfca2f"
+project_hash = "e500f148d0acd17c3f415b6438df51a14aa633bb"
 
 [[deps.AliasTables]]
 deps = ["PtrArrays", "Random"]
@@ -192,16 +192,6 @@ git-tree-sha1 = "466d45dc38e15794ec7d5d63ec03d776a9aff36e"
 uuid = "b22a6f82-2f65-5046-a5b2-351ab43fb4e5"
 version = "4.4.4+1"
 
-[[deps.FileIO]]
-deps = ["Pkg", "Requires", "UUIDs"]
-git-tree-sha1 = "b66970a70db13f45b7e57fbda1736e1cf72174ea"
-uuid = "5789e2e9-d7fb-5bc7-8068-2c6fae9b9549"
-version = "1.17.0"
-weakdeps = ["HTTP"]
-
-    [deps.FileIO.extensions]
-    HTTPExt = "HTTP"
-
 [[deps.FileWatching]]
 uuid = "7b1f6079-737a-58dc-b8bc-7a2ca5c1b5ee"
 version = "1.11.0"
@@ -327,12 +317,6 @@ version = "0.7.0"
 git-tree-sha1 = "e2222959fbc6c19554dc15174c81bf7bf3aa691c"
 uuid = "92d709cd-6900-40b7-9082-c6be49f344b6"
 version = "0.2.4"
-
-[[deps.JLD2]]
-deps = ["FileIO", "MacroTools", "Mmap", "OrderedCollections", "PrecompileTools", "Requires", "TranscodingStreams"]
-git-tree-sha1 = "1059c071429b4753c0c869b75c859c44ba09a526"
-uuid = "033835bb-8acc-5ee8-8aae-3f567f8a3819"
-version = "0.5.12"
 
 [[deps.JLFzf]]
 deps = ["REPL", "Random", "fzf_jll"]
