@@ -46,14 +46,16 @@ RUN julia --project=. -e 'using Pkg; Pkg.instantiate(); Pkg.precompile()'
 RUN rm -rf /opt/julia_depot/logs \
     && rm -rf /usr/local/julia/share/doc
 
-# --- Stage 3: Final Image --- 
+# --- Stage 3: Final Image ---
 FROM continuumio/miniconda3:latest
 
 WORKDIR /app
 
-# 1. Copy patched Julia and depot
+# 1. Copy patched Julia, depot, and the baked Julia project
 COPY --from=builder /usr/local/julia /usr/local/julia
 COPY --from=builder /opt/julia_depot /opt/julia_depot
+COPY --from=builder /app/Project.toml /opt/ap_project/Project.toml
+COPY --from=builder /app/Manifest.toml /opt/ap_project/Manifest.toml
 
 # 2. Symlink Julia
 RUN ln -s /usr/local/julia/bin/julia /usr/local/bin/julia
@@ -72,6 +74,6 @@ ENV CONDA_JL_USE_MAMBA="no"
 ENV JULIA_DEPOT_PATH="/tmp/julia_depot:/opt/julia_depot"
 ENV JULIA_PKG_PRECOMPILE_AUTO=0
 ENV PATH="/opt/conda/envs/ap-env/bin:${PATH}"
-ENV JULIA_PROJECT="/app"
+ENV JULIA_PROJECT="/opt/ap_project"
 
 ENTRYPOINT ["conda", "run", "--no-capture-output", "-n", "ap-env"]
